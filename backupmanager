@@ -9,6 +9,12 @@ set -eu
 #Load the Secrets File
 . ./.secrets
 
+# Handle control-c
+function sigint {
+  echo "User canceled with control-c."
+  exit 130
+}
+
 function usageHelp {
    echo "Usage:"
    echo "    --mode \"backup\""
@@ -75,6 +81,8 @@ then
    echo "BASE_PATH is not set, aborting..."
    exit 1
 fi
+
+trap sigint INT
 
 if [ -z "${DATA_DIR}" ]
 then
