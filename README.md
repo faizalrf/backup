@@ -33,7 +33,7 @@ Usage:
 
 ### Output
 
-Once executed, the script will create the `BASE_DIR` and a target directory based on the current timestamp as `YYYYMMDD-HH24MM` format.
+Once executed, the script in `backup` mode, it will create the `BASE_DIR` and a target directory based on the current timestamp as `YYYYMMDD-HH24MM` format.
 
 The backup will also generate a detailed log file under the `BASE_DIR` folder by the name `backup_YYYYMMDD-HH24MM.out`. This will contain the following stages
 
@@ -47,7 +47,7 @@ During the execution if there is any problem, the script will terminate with app
 To take a backup, simply pass in the `--mode backup` or `-m backup` for short.
 
 ```
-[root@ip-172-31-33-148 ~]# ./backupmanager --mode backup
+shell> ./backupmanager --mode backup
 Created /mariadb/backup/20231020-1814 as desination folder
 ====================================
 Started Backup: 2023-10-20 18:14:56
@@ -73,7 +73,7 @@ This will restore the backup contained in the `20231020-1750` folder. The script
 ### Sample execution
 
 ```
-[root@ip-172-31-33-148 ~]# ./backupmanager --mode restore
+shell> ./backupmanager --mode restore
 Usage:
     --mode "backup"
  or
@@ -85,7 +85,7 @@ Usage:
 Execute with proper parameters. `--mode restore` must be acomnied by `--source <folder>`.
 
 ```
-[root@ip-172-31-16-196 backup]# ls -lrt
+shell> ls -lrt
 total 144
 drwxr-x---. 7 root root  4096 Oct 20 12:20 20231020-1220
 -rw-r--r--. 1 root root 43249 Oct 20 12:20 backup_20231020-1220.out
@@ -98,7 +98,7 @@ drwxr-x---. 7 root root  4096 Oct 20 13:06 20231020-1750
 Let's restore the recent backup `20231020-1750`
 
 ```
-[root@ip-172-31-33-148 ~]# ./backupmanager --mode restore --source 20231020-1750
+shell> ./backupmanager --mode restore --source 20231020-1750
 Stopping MariaDB service
 Cleaning up /mariadb/data before restoring...
 ====================================
