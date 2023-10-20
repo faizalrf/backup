@@ -4,7 +4,7 @@ This set of scripts can be used to backup and restore MariaDB.
 
 ## Backup
 
-The `backupmanager` expects the `.secrets` file to contain the following important variables. 
+The `backupmanager` script expects the `.secrets` file to contain the following important variables. 
 
 ```
 USER_NAME=backup
@@ -17,6 +17,19 @@ DATA_DIRECTORY=/mariadb/data
 - `USER_PASSWD` is the password for the `USER_NAME` user.
 - `BASE_DIR` is the path of the base folder where the backup sub-folders will be created.
 - `DATA_DIRECTORY` is the path of the MariaDB `datadir` where the database files exists.
+
+### Arguments
+
+The `backupmanager` script takes the following parameters
+
+```
+Usage:
+    -m, --mode "backup"
+ or
+    -m, --mode "restore"
+    -s, --source "source folder to restore"
+    --help
+```
 
 ### Output
 
@@ -31,41 +44,45 @@ During the execution if there is any problem, the script will terminate with app
 
 ### Sample Execution
 
+To take a backup, simply pass in the `--mode backup` or `-m backup` for short.
+
 ```
-[root@ip-172-31-16-196 ~]# ./backup
-Created /mariadb/backup/20231020-1306 as desination folder
+[root@ip-172-31-33-148 ~]# ./backupmanager --mode backup
+Created /mariadb/backup/20231020-1814 as desination folder
 ====================================
-Started Backup: 2023-10-20 13:06:09
+Started Backup: 2023-10-20 18:14:56
 ------------------------------------
-Preparing backup at /mariadb/backup/20231020-1306
+Preparing backup at /mariadb/backup/20231020-1814
 --------------------------------------
-Backup Completed: 2023-10-20 13:06:19
+Backup Completed: 2023-10-20 18:14:57
 --------------------------------------
 ```
 
 ## Restore
 
-The `restore.sh` expects the `.secrets` file in the same directory as with the `backup.sh`. This script takes a parameter as the backuo folder name. This is used to identify which backup will be restored. 
+The `backupmanager` script expects the `.secrets` file in the same directory. This script takes a parameter as the backup folder name. This is used to identify which backup will be restored. 
 
 ### Outout
 
 ```
-bash> ./restore.sh 20231020-1235
+bash> ./backupmanager --mode restore --source 20231020-1750
 ```
 
-This will restore the backup contained in the `20231020-1235` folder. The script expects that the MariaDB data directory is empty, if the folder is not empty the script will fail with appropriate error message.
+This will restore the backup contained in the `20231020-1750` folder. The script automatically cleans up the exiting `datadir`, User must ensure the DATA_DIRECTORY is set properly in the `.secrets` file, if the folder is not set or the folder is invalid, the script will fail with appropriate error message.
 
 ### Sample execution
 
 ```
-[root@ip-172-31-16-196 ~]# ./restore
-Incorrect arguments...
-Please specify the backup directory to restore from
+[root@ip-172-31-33-148 ~]# ./backupmanager --mode restore
 Usage:
-shell> backupmanager 20231020-1107
+    --mode "backup"
+ or
+    --mode "restore"
+    --source "source folder to restore"
+    --help
 ```
 
-Execute with proper parameters. The backup contains the following three backup directories and logs.
+Execute with proper parameters. `--mode restore` must be acomnied by `--source <folder>`.
 
 ```
 [root@ip-172-31-16-196 backup]# ls -lrt
@@ -74,32 +91,23 @@ drwxr-x---. 7 root root  4096 Oct 20 12:20 20231020-1220
 -rw-r--r--. 1 root root 43249 Oct 20 12:20 backup_20231020-1220.out
 drwxr-x---. 7 root root  4096 Oct 20 12:35 20231020-1235
 -rw-r--r--. 1 root root 43028 Oct 20 12:35 backup_20231020-1235.out
-drwxr-x---. 7 root root  4096 Oct 20 13:06 20231020-1306
--rw-r--r--. 1 root root 43028 Oct 20 13:06 backup_20231020-1306.out
+drwxr-x---. 7 root root  4096 Oct 20 13:06 20231020-1750
+-rw-r--r--. 1 root root 43028 Oct 20 13:06 backup_20231020-1750.out
 ```
 
-Let's restore the recent backup `20231020-1306`
+Let's restore the recent backup `20231020-1750`
 
 ```
-[root@ip-172-31-16-196 ~]# ./restore 20231020-1306
-/mariadb/data is not empty, please clean it up before restoring...
-```
-
-We will have to cleanup the existing datadir before proceeding.
-
-```
-[root@ip-172-31-16-196 ~]# systemctl stop mariadb
-[root@ip-172-31-16-196 ~]# rm -rf /mariadb/data/*
-[root@ip-172-31-16-196 ~]# ./restore 20231020-1306
-/mariadb/data is empty, safe to restore...
+[root@ip-172-31-33-148 ~]# ./backupmanager --mode restore --source 20231020-1750
 Stopping MariaDB service
+Cleaning up /mariadb/data before restoring...
 ====================================
-Started Restore: 2023-10-20 13:11:17
+Started Restore: 2023-10-20 18:12:45
 ------------------------------------
 Changing ownership of the restored /mariadb/data
 Starging MariaDB Service
 --------------------------------------
-Restore Completed: 2023-10-20 13:11:26
+Restore Completed: 2023-10-20 18:12:45
 --------------------------------------
 ```
 

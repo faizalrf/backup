@@ -43,8 +43,6 @@ do
         esac
         shift
 done
-echo "$execMode"
-echo "$sourceFolder"
 
 if [[ $execMode == "restore" ]]; then
     if [ -z "${sourceFolder}" ]
