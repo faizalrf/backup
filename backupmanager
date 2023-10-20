@@ -3,6 +3,9 @@
 #Faisal Saeed
 #GNU 2.0 Free to use but absolutely no guarantees
 
+#Safetynet! 
+set -eu
+
 #Load the Secrets File
 . ./.secrets
 
@@ -22,26 +25,26 @@ then
 fi
 
 #Process input parameters
+execMode="null"
+sourceFolder="null"
+
 while [[ $# > 0 ]]
 do
-        case "$1" in
-
-                -m|--mode)
-                        execMode="$2"
-                        shift
-                        ;;
-
-                -s|--source)
-                        sourceFolder="$2"
-                        shift
-                        ;;
-
-                --help|*)
-                        usageHelp
-                        exit 1
-                        ;;
-        esac
-        shift
+    case "$1" in
+        -m|--mode)
+            execMode="$2"
+            shift
+            ;;
+        -s|--source)
+            sourceFolder="$2"
+            shift
+            ;;
+        --help|*)
+            usageHelp
+            exit 1
+            ;;
+    esac
+    shift
 done
 
 if [[ $execMode == "restore" ]]; then
