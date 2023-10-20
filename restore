@@ -85,6 +85,6 @@ then
 fi
 
 log "--------------------------------------"
-log "Backup Completed: $(date +%Y-%m-%d\ %H:%M:%S)"
+log "Restore Completed: $(date +%Y-%m-%d\ %H:%M:%S)"
 log "--------------------------------------"
 exit 0
