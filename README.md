@@ -4,7 +4,7 @@ This set of scripts can be used to backup and restore MariaDB.
 
 ## Backup
 
-The `backup.sh` expects the `.secrets` file to contain the following important variables. 
+The `backupmanager` expects the `.secrets` file to contain the following important variables. 
 
 ```
 USER_NAME=backup
@@ -62,7 +62,7 @@ This will restore the backup contained in the `20231020-1235` folder. The script
 Incorrect arguments...
 Please specify the backup directory to restore from
 Usage:
-shell> backup_restore.sh 20231020-1107
+shell> backupmanager 20231020-1107
 ```
 
 Execute with proper parameters. The backup contains the following three backup directories and logs.

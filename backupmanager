@@ -1,0 +1,193 @@
+#!/bin/bash
+#Dated: 20th October 2023
+#Faisal Saeed
+#GNU 2.0 Free to use but absolutely no guarantees
+
+#Load the Secrets File
+. ./.secrets
+
+function usageHelp {
+   echo "Usage:"
+   echo "    --mode \"backup\""
+   echo " or "
+   echo "    --mode \"restore\""
+   echo "    --source \"source folder to restore\""
+   echo "    --help"
+}
+
+if [ $# -eq 0 ]
+then
+    usageHelp
+    exit 1
+fi
+
+#Process input parameters
+while [[ $# > 0 ]]
+do
+        case "$1" in
+
+                -m|--mode)
+                        execMode="$2"
+                        shift
+                        ;;
+
+                -s|--source)
+                        sourceFolder="$2"
+                        shift
+                        ;;
+
+                --help|*)
+                        usageHelp
+                        exit 1
+                        ;;
+        esac
+        shift
+done
+echo "$execMode"
+echo "$sourceFolder"
+
+if [[ $execMode == "restore" ]]; then
+    if [ -z "${sourceFolder}" ]
+    then
+        usageHelp
+        exit 1
+    fi
+    CURR_DATE="${sourceFolder}"
+else
+    CURR_DATE="$(date +%Y%m%d-%H%M)"
+fi
+
+BASE_PATH="${BASE_DIR}"
+TARGET_DIR="${BASE_PATH}/${CURR_DATE}"
+DATA_DIR="${DATA_DIRECTORY}"
+LOG_FILE="${BASE_PATH}/${execMode}_${CURR_DATE}-$(date +%Y%m%d-%H%M)".out
+USER="${USER_NAME}"
+PASSWD="${USER_PASSWD}"
+
+function log {
+   echo $1
+   echo "$(date) - $1" >> "${LOG_FILE}"
+}
+
+if [ -z "${BASE_PATH}" ]
+then
+   echo "BASE_PATH is not set, aborting..."
+   exit 1
+fi
+
+if [ -z "${DATA_DIR}" ]
+then
+   echo "DATA_DIRECTORY is not set, aborting..."
+   exit 1
+fi
+
+if [ "${execMode}" == "backup" ]
+then
+    if [ ! -d "${TARGET_DIR}" ]
+    then
+        mkdir -p "${TARGET_DIR}"
+        [ ! -f "${LOG_FILE}" ] && touch "${LOG_FILE}"
+        chmod -R 750 "${TARGET_DIR}"
+        log "Created ${TARGET_DIR} as desination folder"
+    else
+        log "Backup folder ${TARGET_DIR} already exists"
+        exit 1
+    fi
+
+    log "===================================="
+    log "Started Backup: $(date +%Y-%m-%d\ %H:%M:%S)"
+    log "------------------------------------"
+
+    mariabackup --backup --user="${USER}" --password="${PASSWD}" --target-dir="${TARGET_DIR}" --datadir="${DATA_DIR}" 2>>"${LOG_FILE}"
+    retval=$?
+
+    if [ "${retval}" -ne 0 ]
+    then
+        echo "Failed to execute mariabackup, please review ${LOG_FILE}"
+        exit 1
+    fi
+
+    log "Preparing backup at ${TARGET_DIR}"
+    mariabackup --prepare --user="${USER}" --password="${PASSWD}" --target-dir="${TARGET_DIR}" 2>>"${LOG_FILE}"
+    retval=$?
+
+    if [ "${retval}" -ne 0 ]
+    then
+        echo "Failed to prepare backup, please review ${LOG_FILE}"
+        exit 1
+    fi
+
+    log "--------------------------------------"
+    log "Backup Completed: $(date +%Y-%m-%d\ %H:%M:%S)"
+    log "--------------------------------------"
+else
+    if [ "${execMode}" != "restore" ]
+    then
+        log "Invalid Parameters!"
+        usageHelp
+        exit 1
+    fi
+
+    if [ ! -d "${TARGET_DIR}" ]
+    then
+        log "Backup ${TARGET_DIR} does not exist, aborting..."
+        exit 1
+    fi
+
+    if [ -z "${DATA_DIR}" ]
+    then
+        log "DATA_DIRECTORY not set, aborting..."
+        exit 1
+    fi
+
+    if [ -d "${DATA_DIR}" ]
+    then
+        log "Stopping MariaDB service"
+        systemctl stop mariadb
+        retval=$?
+
+        if [ "${retval}" -ne 0 ]
+        then
+            echo "Failed to stop MariaDB service, please review server logs."
+            exit 1
+        fi
+        
+        # Cleanup the existing datadir before restoring
+        log "Cleaning up ${DATA_DIR} before restoring..."
+        rm -rf "${DATA_DIR}"/*
+    else
+        log "Data Directory ${DATA_DIR} does not exist"
+        exit 1
+    fi
+
+    log "===================================="
+    log "Started Restore: $(date +%Y-%m-%d\ %H:%M:%S)"
+    log "------------------------------------"
+
+    mariabackup --copy-back --target-dir="${TARGET_DIR}" --datadir="${DATA_DIR}" 2>>"${LOG_FILE}"
+    retval=$?
+
+    if [ "${retval}" -ne 0 ]
+    then
+        echo "Failed to restore, please review "${LOG_FILE}""
+        exit 1
+    fi
+
+    log "Changing ownership of the restored "${DATA_DIR}""
+    chown -R mysql:mysql "${DATA_DIR}"
+
+    log "Starging MariaDB Service"
+    systemctl restart mariadb
+    retval=$?
+
+    if [ "${retval}" -ne 0 ]
+    then
+        echo "Failed to start MariaDB service, please review server logs."
+        exit 1
+    fi
+
+    log "--------------------------------------"
+    log "Restore Completed: $(date +%Y-%m-%d\ %H:%M:%S)"
+    log "--------------------------------------"
+fi
+exit 0
