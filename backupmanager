@@ -3,8 +3,25 @@
 #Faisal Saeed
 #GNU 2.0 Free to use but absolutely no guarantees
 
-#Safetynet! 
+#Safetynet for Undefined Variables!
 set -eu
+
+trap 'error_handler' ERR
+
+error_handler() {
+  echo "Backup Manager Failed to Execute, please review the logs."
+  exit -1
+}
+
+line() {
+    local messageLength="$1"
+    local line=''
+
+    for (( i=0; i<${messageLength}; i++ )); do
+        line+="-"
+    done
+    echo -e "${line}"
+}
 
 #Load the Secrets File
 . ./.secrets
@@ -13,10 +30,10 @@ set -eu
 function sigint {
   echo "User canceled with control-c."
   exit 130
-}
 
 function usageHelp {
    echo "Usage:"
+}
    echo "    --mode \"backup\""
    echo " or "
    echo "    --mode \"restore\""
@@ -72,7 +89,7 @@ USER="${USER_NAME}"
 PASSWD="${USER_PASSWD}"
 
 function log {
-   echo $1
+   echo "$1"
    echo "$(date) - $1" >> "${LOG_FILE}"
 }
 
@@ -102,10 +119,11 @@ then
         log "Backup folder ${TARGET_DIR} already exists"
         exit 1
     fi
+    message="Started Backup: $(date +%Y-%m-%d\ %H:%M:%S), Logfile: $LOG_FILE"
 
-    log "===================================="
-    log "Started Backup: $(date +%Y-%m-%d\ %H:%M:%S)"
-    log "------------------------------------"
+    log "$(line ${#message})"
+    log "${message}"
+    log "$(line ${#message})"
 
     mariabackup --backup --user="${USER}" --password="${PASSWD}" --target-dir="${TARGET_DIR}" --datadir="${DATA_DIR}" 2>>"${LOG_FILE}"
     retval=$?
@@ -126,9 +144,11 @@ then
         exit 1
     fi
 
-    log "--------------------------------------"
-    log "Backup Completed: $(date +%Y-%m-%d\ %H:%M:%S)"
-    log "--------------------------------------"
+    message="Backup Completed: $(date +%Y-%m-%d\ %H:%M:%S), Logfile: $LOG_FILE"
+
+    log "$(line ${#message})"
+    log "${message}"
+    log "$(line ${#message})"
 else
     if [ "${execMode}" != "restore" ]
     then
@@ -168,10 +188,12 @@ else
         log "Data Directory ${DATA_DIR} does not exist"
         exit 1
     fi
+    
+    message="Started Restore: $(date +%Y-%m-%d\ %H:%M:%S), Logfile: $LOG_FILE"
 
-    log "===================================="
-    log "Started Restore: $(date +%Y-%m-%d\ %H:%M:%S)"
-    log "------------------------------------"
+    log "$(line ${#message})"
+    log "${message}"
+    log "$(line ${#message})"
 
     mariabackup --copy-back --target-dir="${TARGET_DIR}" --datadir="${DATA_DIR}" 2>>"${LOG_FILE}"
     retval=$?
@@ -195,8 +217,10 @@ else
         exit 1
     fi
 
-    log "--------------------------------------"
-    log "Restore Completed: $(date +%Y-%m-%d\ %H:%M:%S)"
-    log "--------------------------------------"
+    message="Backup Completed: $(date +%Y-%m-%d\ %H:%M:%S), Logfile: $LOG_FILE"
+
+    log "$(line ${#message})"
+    log "${message}"
+    log "$(line ${#message})"
 fi
 exit 0
